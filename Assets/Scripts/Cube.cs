@@ -91,6 +91,7 @@ public class Cube : MonoBehaviour
             t = SetQuad(triangles, t, v, v - ring + 1, v + ring, v + 1);
         }
         t = CreateTopFace(triangles, t, ring);
+        t = CreateBottomFace(triangles, t, ring);
         mesh.triangles = triangles;
     }
     // 创建最顶上的面
@@ -104,7 +105,7 @@ public class Cube : MonoBehaviour
         t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + 2);
         /**
             o----vTop-<---o------o
-            o------o------o------^
+            v------o------o------^
             o------o------o------o
           vMin-->vMid-----o----vMax
            (s)-----o-->--(v)-----o
@@ -134,6 +135,51 @@ public class Cube : MonoBehaviour
             t = SetQuad(triangles, t, vMid, vMid + 1, vTop, vTop - 1);
         }
         t = SetQuad(triangles, t, vMid, vTop - 2, vTop, vTop - 1);
+        return t;
+    }
+
+    private int CreateBottomFace(int[] triangles, int t, int ring) {
+        // 最下面一环的顶点
+        int v = 1;
+        int vMid = vertices.Length - (xSize - 1) * (zSize - 1);
+        t = SetQuad(triangles, t, ring - 1, vMid, 0, 1);
+        // 靠近x的第一行
+        for (int x = 1; x < xSize - 1; x++, v++, vMid++) {
+            t = SetQuad(triangles, t, vMid, vMid + 1, v, v + 1);
+        }
+        t = SetQuad(triangles, t, vMid, v + 2, v, v + 1);
+        /**
+           (0)----(1)-->-(v)-----o
+           (e)-->-vMid----o-----vMax
+          vMin-----o------o------o
+            ^------o------o------o
+            o-----vTop-<--o------o
+            vMin: 最外环的一个点 第一个vMin是环算法的倒数第二个 在算面的时候回是倒着的
+            vMid: 面上的一个点 第一个vMid是面算法的第一个 在算面的时候 刚刚好适用于面算法
+            vMax: 再算v点时的最后一个+2得到的
+            vTop: 等算到该面的最后一行的时候 直接vMin-2即可获得
+         */
+        int vMin = ring - 2;
+        vMid -= xSize - 2;
+        // 这里这个v还是靠近x的第一行的最后一个的首点
+        int vMax = v + 2;
+        for (int z = 1; z < zSize - 1; z++, vMin--, vMid++, vMax++) {
+            // 靠近x的第z行的第一个
+            t = SetQuad(triangles, t, vMin, vMid + xSize - 1, vMin + 1, vMid);
+            // 第z行剩余的 但不含最后一个 x从1开始-1结束 两边都被绘制过了
+            for (int x = 1; x < xSize - 1; x++, vMid++) {
+                t = SetQuad(triangles, t, vMid + xSize - 1, vMid + xSize, vMid, vMid + 1);
+            }
+            // 第z行最后一个四边形
+            t = SetQuad(triangles, t, vMid + xSize - 1, vMax + 1, vMid, vMax);
+        }
+        // 该面最后一个四边形
+        int vTop = vMin - 1;
+        t = SetQuad(triangles, t, vTop + 1, vTop, vTop + 2, vMid);
+        for (int x = 1; x < xSize - 1; x++, vTop--, vMid++) {
+            t = SetQuad(triangles, t, vTop, vTop - 1, vMid, vMid + 1);
+        }
+        t = SetQuad(triangles, t, vTop, vTop - 1, vMid, vTop - 2);
         return t;
     }
 
