@@ -26,8 +26,8 @@ public class RoundedCube : MonoBehaviour
         for (int i = 0; i < vertices.Length; i++) {
             Gizmos.color = Color.black;
             Gizmos.DrawSphere(vertices[i], 0.1f);
-            Gizmos.color = Color.yellow;
-            Gizmos.DrawRay(vertices[i], normals[i]);
+            // Gizmos.color = Color.yellow;
+            // Gizmos.DrawRay(vertices[i], normals[i]);
         }
     }
 
@@ -84,23 +84,39 @@ public class RoundedCube : MonoBehaviour
     private void CreateTriangles() {
         int quads = (xSize * ySize + xSize * zSize + ySize * zSize) * 2;
         int pointCount = 6;
-        int[] triangles = new int[quads * pointCount];
+
+        int[] trianglesZ = new int[(xSize * ySize) * pointCount * 2];
+        int[] trianglesX = new int[(ySize * zSize) * pointCount * 2];
+        int[] trianglesY = new int[(xSize * zSize) * pointCount * 2];
 
         // ring 一环的总数
         int ring = (xSize + zSize) * 2;
         // t是顶点数组的下标 v是第几个顶点
-        int t = 0, v = 0;
+        int tZ = 0, tX = 0, tY = 0, v = 0;
         for (int y = 0; y < ySize; y++, v++) {
-            for (int q = 0; q < ring - 1; q++, v++) {
-                // q x轴上一面的第几个正方形
-                t = SetQuad(triangles, t, v, v + 1, v + ring, v + ring + 1);
+            // q 这一面上的第几个正方形
+            for (int q = 0; q < xSize; q++, v++) {
+                tZ = SetQuad(trianglesZ, tZ, v, v + 1, v + ring, v + ring + 1);
+            }
+            for (int q = 0; q < zSize; q++, v++) {
+                tX = SetQuad(trianglesX, tX, v, v + 1, v + ring, v + ring + 1);
+            }
+            for (int q = 0; q < xSize; q++, v++) {
+                tZ = SetQuad(trianglesZ, tZ, v, v + 1, v + ring, v + ring + 1);
+            }
+            for (int q = 0; q < zSize - 1; q++, v++) {
+                tX = SetQuad(trianglesX, tX, v, v + 1, v + ring, v + ring + 1);
             }
             // 每环结束的最后一个三角形会抬高一环链接到高环上去 我们应该让他和本环第一个相连
-            t = SetQuad(triangles, t, v, v - ring + 1, v + ring, v + 1);
+            tX = SetQuad(trianglesX, tX, v, v - ring + 1, v + ring, v + 1);
         }
-        t = CreateTopFace(triangles, t, ring);
-        t = CreateBottomFace(triangles, t, ring);
-        mesh.triangles = triangles;
+        tY = CreateTopFace(trianglesY, tY, ring);
+        tY = CreateBottomFace(trianglesY, tY, ring);
+
+        mesh.subMeshCount = 3;
+        mesh.SetTriangles(trianglesZ, 0);
+        mesh.SetTriangles(trianglesX, 1);
+        mesh.SetTriangles(trianglesY, 2);
     }
     // 创建最顶上的面
     private int CreateTopFace(int[] triangles, int t, int ring) {
