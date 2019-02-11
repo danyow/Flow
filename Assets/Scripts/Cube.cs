@@ -42,7 +42,7 @@ public class Cube : MonoBehaviour
                 yield return wait;
             }
 
-            for (int z = 0; z <= zSize; z++) {
+            for (int z = 1; z <= zSize; z++) {
                 vertices[v++] = new Vector3(xSize, y, z);
                 yield return wait;
             }
@@ -59,14 +59,16 @@ public class Cube : MonoBehaviour
         }
         // 顶面
         for (int z = 1; z < zSize; z++) {
-            for (int x = 0; x < xSize; x++) {
+            for (int x = 1; x < xSize; x++) {
                 vertices[v++] = new Vector3(x, ySize, z);     
+                yield return wait;
             }
         }
         // 底面
         for (int z = 1; z < zSize; z++) {
-            for (int x = 0; x < xSize; x++) {
+            for (int x = 1; x < xSize; x++) {
                 vertices[v++] = new Vector3(x, 0, z);     
+                yield return wait;
             }
         }
     }
