@@ -12,7 +12,7 @@ public class Cube : MonoBehaviour
     private Vector3[] vertices;
 
     private void Awake() {
-        StartCoroutine(Generate());
+        Generate();
     }
 
     private void OnDrawGizmos() {
@@ -25,11 +25,15 @@ public class Cube : MonoBehaviour
         }
     }
 
-    private IEnumerator Generate() {
+    private void Generate() {
         GetComponent<MeshFilter>().mesh = mesh = new Mesh();
         mesh.name = "Procedural Cube";
-        WaitForSeconds wait = new WaitForSeconds(0.05f);
+        CreateVertices();
+        CreateTriangles();
+    }
 
+    // 创建顶点
+    private void CreateVertices() {
         int cornerVertices = 8;
         int edgeVertices = (xSize + ySize + zSize - 3) * 4;
         int faceVertices = ((xSize - 1) * (ySize - 1) + (xSize - 1) * (zSize - 1) + (ySize - 1) * (zSize - 1)) * 2;
@@ -39,37 +43,93 @@ public class Cube : MonoBehaviour
         for (int y = 0; y <= ySize; y++) {
             for (int x = 0; x <= xSize; x++) {
                 vertices[v++] = new Vector3(x, y, 0);
-                yield return wait;
             }
 
             for (int z = 1; z <= zSize; z++) {
                 vertices[v++] = new Vector3(xSize, y, z);
-                yield return wait;
             }
             
             for (int x = xSize - 1; x >= 0; x--) {
                 vertices[v++] = new Vector3(x, y, zSize);
-                yield return wait;
             }
 
             for (int z = zSize - 1; z > 0; z--) {
                 vertices[v++] = new Vector3(0, y, z);
-                yield return wait;
             }
         }
         // 顶面
         for (int z = 1; z < zSize; z++) {
             for (int x = 1; x < xSize; x++) {
-                vertices[v++] = new Vector3(x, ySize, z);     
-                yield return wait;
+                vertices[v++] = new Vector3(x, ySize, z);
             }
         }
         // 底面
         for (int z = 1; z < zSize; z++) {
             for (int x = 1; x < xSize; x++) {
-                vertices[v++] = new Vector3(x, 0, z);     
-                yield return wait;
+                vertices[v++] = new Vector3(x, 0, z);
             }
         }
+        mesh.vertices = vertices;
+    }
+
+    // 创建三角形
+    private void CreateTriangles() {
+        int quads = (xSize * ySize + xSize * zSize + ySize * zSize) * 2;
+        int pointCount = 6;
+        int[] triangles = new int[quads * pointCount];
+
+        // ring 一环的总数
+        int ring = (xSize + zSize) * 2;
+        // t是顶点数组的下标 v是第几个顶点
+        int t = 0, v = 0;
+        for (int y = 0; y < ySize; y++, v++) {
+            for (int q = 0; q < ring - 1; q++, v++) {
+                // q x轴上一面的第几个正方形
+                t = SetQuad(triangles, t, v, v + 1, v + ring, v + ring + 1);
+            }
+            // 每环结束的最后一个三角形会抬高一环链接到高环上去 我们应该让他和本环第一个相连
+            t = SetQuad(triangles, t, v, v - ring + 1, v + ring, v + 1);
+        }
+        t = CreateTopFace(triangles, t, ring);
+        mesh.triangles = triangles;
+    }
+    // 创建最顶上的面
+    private int CreateTopFace(int[] triangles, int t, int ring) {
+        // 最上面一环的顶点
+        int v = ring * ySize;
+        // 靠近x的第一行
+        for (int x = 0; x < xSize - 1; x++, v++) {
+            t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + ring);
+        }
+        t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + 2);
+        // 靠近x的第二行的第一个
+        int vMin = ring * (ySize + 1) - 1;
+        int vMid = vMin + 1;
+        // 这里这个v还是靠近x的第一行的最后一个的首点
+        int vMax = v + 2;
+        t = SetQuad(triangles, t, vMin, vMid, vMin - 1, vMid + xSize - 1);
+        // 第二行剩余的 但不含最后一个 x从1开始-1结束 两边都被绘制过了
+        for (int x = 1; x < xSize - 1; x++, vMid++) {
+            t = SetQuad(triangles, t, vMid, vMid + 1, vMid + xSize - 1, vMid + xSize);
+        }
+        // 第二行最后一个四边形
+        t = SetQuad(triangles, t, vMid, vMax, vMid + xSize - 1, vMax + 1);
+        return t;
+    }
+
+    // 给予四个点创建两个三角形
+    private static int SetQuad(int[] triangles, int i, int a, int b, int c, int d) {
+        /**
+            c------d
+            |      |
+            |      |
+            a------b
+            两个顺时针方向的三角形就是 a->c->b b->c->d
+         */
+        triangles[i] = a;
+        triangles[i + 1] = triangles[i + 4] = c;
+        triangles[i + 2] = triangles[i + 3] = b;
+        triangles[i + 5] = d;
+        return i + 6;
     }
 }
