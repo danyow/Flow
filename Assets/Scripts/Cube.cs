@@ -103,7 +103,7 @@ public class Cube : MonoBehaviour
         }
         t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + 2);
         /**
-            o------o--<---o------o
+            o----vTop-<---o------o
             o------o------o------^
             o------o------o------o
           vMin-->vMid-----o----vMax
@@ -111,6 +111,7 @@ public class Cube : MonoBehaviour
             vMin: 最外环的一个点 第一个vMin是环算法的最后一个 在算面的时候回是倒着的
             vMid: 面上的一个点 第一个vMid是面算法的第一个 在算面的时候 刚刚好适用于面算法
             vMax: 再算第一行时的最后一个+2得到的 这里+2刚好对应着vMin vMin--时 vMax++
+            vTop: 等算到该面的最后一行的时候 直接vMin-2即可获得
          */
         int vMin = ring * (ySize + 1) - 1;
         int vMid = vMin + 1;
@@ -126,6 +127,13 @@ public class Cube : MonoBehaviour
             // 第z行最后一个四边形
             t = SetQuad(triangles, t, vMid, vMax, vMid + xSize - 1, vMax + 1);
         }
+        // 该面最后一个四边形
+        int vTop = vMin - 2;
+        t = SetQuad(triangles, t, vMin, vMid, vTop + 1, vTop);
+        for (int x = 1; x < xSize - 1; x++, vTop--, vMid++) {
+            t = SetQuad(triangles, t, vMid, vMid + 1, vTop, vTop - 1);
+        }
+        t = SetQuad(triangles, t, vMid, vTop - 2, vTop, vTop - 1);
         return t;
     }
 
