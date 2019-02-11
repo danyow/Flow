@@ -102,18 +102,30 @@ public class Cube : MonoBehaviour
             t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + ring);
         }
         t = SetQuad(triangles, t, v, v + 1, v + ring - 1, v + 2);
-        // 靠近x的第二行的第一个
+        /**
+            o------o--<---o------o
+            o------o------o------^
+            o------o------o------o
+          vMin-->vMid-----o----vMax
+           (s)-----o-->--(v)-----o
+            vMin: 最外环的一个点 第一个vMin是环算法的最后一个 在算面的时候回是倒着的
+            vMid: 面上的一个点 第一个vMid是面算法的第一个 在算面的时候 刚刚好适用于面算法
+            vMax: 再算第一行时的最后一个+2得到的 这里+2刚好对应着vMin vMin--时 vMax++
+         */
         int vMin = ring * (ySize + 1) - 1;
         int vMid = vMin + 1;
         // 这里这个v还是靠近x的第一行的最后一个的首点
         int vMax = v + 2;
-        t = SetQuad(triangles, t, vMin, vMid, vMin - 1, vMid + xSize - 1);
-        // 第二行剩余的 但不含最后一个 x从1开始-1结束 两边都被绘制过了
-        for (int x = 1; x < xSize - 1; x++, vMid++) {
-            t = SetQuad(triangles, t, vMid, vMid + 1, vMid + xSize - 1, vMid + xSize);
+        for (int z = 1; z < zSize - 1; z++, vMin--, vMid++, vMax++) {
+            // 靠近x的第z行的第一个
+            t = SetQuad(triangles, t, vMin, vMid, vMin - 1, vMid + xSize - 1);
+            // 第z行剩余的 但不含最后一个 x从1开始-1结束 两边都被绘制过了
+            for (int x = 1; x < xSize - 1; x++, vMid++) {
+                t = SetQuad(triangles, t, vMid, vMid + 1, vMid + xSize - 1, vMid + xSize);
+            }
+            // 第z行最后一个四边形
+            t = SetQuad(triangles, t, vMid, vMax, vMid + xSize - 1, vMax + 1);
         }
-        // 第二行最后一个四边形
-        t = SetQuad(triangles, t, vMid, vMax, vMid + xSize - 1, vMax + 1);
         return t;
     }
 
