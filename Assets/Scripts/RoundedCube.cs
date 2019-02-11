@@ -38,6 +38,7 @@ public class RoundedCube : MonoBehaviour
         mesh.name = "Procedural RoundedCube";
         CreateVertices();
         CreateTriangles();
+        CreateColliders();
     }
 
     // 创建顶点
@@ -209,6 +210,58 @@ public class RoundedCube : MonoBehaviour
         }
         t = SetQuad(triangles, t, vTop, vTop - 1, vMid, vTop - 2);
         return t;
+    }
+
+    // 创建碰撞器
+    private void CreateColliders() {
+        // AddBoxCollider(xSize, ySize - roundness * 2, zSize - roundness * 2);
+        // AddBoxCollider(xSize - roundness * 2, ySize, zSize - roundness * 2);
+        // AddBoxCollider(xSize - roundness * 2, ySize - roundness * 2, zSize);
+
+        Vector3 min  = Vector3.one * roundness;
+        Vector3 half = new Vector3(xSize, ySize, zSize) * 0.5f;
+        Vector3 max  = new Vector3(xSize, ySize, zSize) - min;
+
+
+        /**
+            Y(X)((Y))
+            ^           
+            |           max
+            |
+            |
+            |   min
+            |
+            ----------------->Z(Z)((X))
+         */
+
+        AddCapsuleCollider(0, half.x, min.y, min.z);
+        AddCapsuleCollider(0, half.x, min.y, max.z);
+        AddCapsuleCollider(0, half.x, max.y, min.z);
+        AddCapsuleCollider(0, half.x, max.y, max.z);
+        
+        AddCapsuleCollider(1, min.x, half.y, min.z);
+        AddCapsuleCollider(1, min.x, half.y, max.z);
+        AddCapsuleCollider(1, max.x, half.y, min.z);
+        AddCapsuleCollider(1, max.x, half.y, max.z);
+
+        AddCapsuleCollider(2, min.x, min.y, half.z);
+        AddCapsuleCollider(2, min.x, max.y, half.z);
+        AddCapsuleCollider(2, max.x, min.y, half.z);
+        AddCapsuleCollider(2, max.x, max.y, half.z);
+    }
+
+    private void AddBoxCollider(float x, float y, float z) {
+        BoxCollider c = gameObject.AddComponent<BoxCollider>();
+        // 这里的x, y, z 理解为长宽高
+        c.size = new Vector3(x, y, z);
+    }
+
+    private void AddCapsuleCollider(int direction, float x, float y, float z) {
+        CapsuleCollider c = gameObject.AddComponent<CapsuleCollider>();
+        c.center = new Vector3(x, y, z);
+        c.direction = direction;
+        c.radius = roundness;
+        c.height = c.center[direction] * 2f;
     }
 
     // 给予四个点创建两个三角形
